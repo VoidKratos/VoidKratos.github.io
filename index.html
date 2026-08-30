@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#6d5dfc" />
+  <meta name="description" content="A private two-person expense tracker." />
+  <title>Together Money — Private Couple Expense Tracker</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div id="toast" class="toast" aria-live="polite"></div>
+
+  <section id="authScreen" class="auth-screen hidden">
+    <div class="auth-art">
+      <div class="brand-mark">T</div>
+      <p class="eyebrow">PRIVATE HOUSEHOLD FINANCE</p>
+      <h1>Money is easier<br/>when it’s clear.</h1>
+      <p class="auth-copy">Track personal and shared spending, see exactly who owes whom, and settle up without spreadsheets.</p>
+      <div class="privacy-pill">🔒 Your financial data is protected by Supabase RLS</div>
+    </div>
+    <div class="auth-panel">
+      <div class="auth-card">
+        <div class="mobile-brand"><span class="brand-dot"></span>Together Money</div>
+        <p class="eyebrow">ONLY TWO PEOPLE</p>
+        <h2 id="authTitle">Welcome back</h2>
+        <p class="muted" id="authSubtitle">Sign in to your private household.</p>
+        <div class="segmented" id="authTabs">
+          <button class="active" data-auth-mode="login">Log in</button>
+          <button data-auth-mode="signup">Sign up</button>
+        </div>
+        <form id="authForm" class="stack gap-14">
+          <label>Email<input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com" required></label>
+          <label>Password<input id="authPassword" type="password" autocomplete="current-password" minlength="8" placeholder="At least 8 characters" required></label>
+          <button id="authSubmit" class="btn primary full" type="submit">Log in</button>
+        </form>
+        <p id="authMessage" class="form-message"></p>
+        <p class="tiny muted centered">Only the household creator and the invited partner can access financial data.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="onboardingScreen" class="modal-screen hidden">
+    <div class="setup-card">
+      <div class="brand-line"><span class="brand-dot"></span><b>Together Money</b></div>
+      <p class="eyebrow">PRIVATE TWO-PERSON SETUP</p>
+      <h2>Set up your household</h2>
+      <p class="muted">The first person creates the household and invites their partner. The second person joins using the exact invited email.</p>
+      <div class="segmented" id="setupTabs">
+        <button class="active" data-setup-mode="create">Create household</button>
+        <button data-setup-mode="join">Join invitation</button>
+      </div>
+      <form id="setupForm" class="stack gap-14">
+        <label>Your name<input id="setupName" required placeholder="Your name"></label>
+        <div id="createFields" class="stack gap-14">
+          <label>Household name<input id="householdName" value="Our Household"></label>
+          <label>Partner email<input id="partnerEmail" type="email" placeholder="partner@example.com"></label>
+          <label>Monthly household budget (₹)<input id="monthlyBudget" type="number" min="0" step="100" value="60000"></label>
+        </div>
+        <div id="joinHint" class="soft-panel hidden">Your signed-in email must match the partner email entered by the household creator.</div>
+        <button id="setupSubmit" class="btn primary full" type="submit">Create private household</button>
+      </form>
+      <p id="setupMessage" class="form-message"></p>
+      <button id="setupLogout" class="link-button">Sign out and use a different account</button>
+    </div>
+  </section>
+
+  <div id="app" class="app hidden">
+    <aside class="sidebar">
+      <div class="brand"><span class="brand-mark small">T</span><div><b>Together</b><span>Money</span></div></div>
+      <button class="quick-add" id="quickAdd">＋ Add expense</button>
+      <nav id="nav">
+        <button class="active" data-view="dashboard"><span>⌂</span>Dashboard</button>
+        <button data-view="transactions"><span>↕</span>Transactions</button>
+        <button data-view="analytics"><span>◫</span>Analytics</button>
+        <button data-view="budgets"><span>◎</span>Budgets</button>
+        <button data-view="settlements"><span>⇄</span>Settlements</button>
+        <button data-view="reports"><span>⇩</span>Reports</button>
+        <button data-view="settings"><span>⚙</span>Settings</button>
+      </nav>
+      <div class="sidebar-foot">
+        <div class="household-chip"><span class="avatar" id="sidebarAvatar">Y</span><div><b id="sidebarName">You</b><span id="sidebarHousehold">Our Household</span></div></div>
+        <button id="logoutBtn" class="icon-button" title="Sign out">↪</button>
+      </div>
+    </aside>
+
+    <div class="main-wrap">
+      <header class="topbar">
+        <button id="mobileMenu" class="mobile-menu">☰</button>
+        <div><p class="eyebrow" id="topEyebrow">YOUR PRIVATE HOUSEHOLD</p><b id="topHousehold">Our Household</b></div>
+        <div class="top-actions">
+          <button id="themeBtn" class="icon-button" title="Toggle theme">◐</button>
+          <button id="topAdd" class="btn primary">＋ Add expense</button>
+        </div>
+      </header>
+
+      <main id="content" class="content"></main>
+    </div>
+  </div>
+
+  <div id="expenseModal" class="modal-backdrop hidden">
+    <div class="modal-card wide">
+      <div class="modal-head"><div><p class="eyebrow">TRANSACTION</p><h2 id="expenseModalTitle">Add expense</h2></div><button class="close-btn" data-close-expense>×</button></div>
+      <form id="expenseForm" class="form-grid">
+        <input id="expenseId" type="hidden">
+        <label class="span-2">Title<input id="expenseTitle" required maxlength="80" placeholder="Dinner, groceries, electricity…"></label>
+        <label>Amount (₹)<input id="expenseAmount" required type="number" min="0.01" step="0.01" placeholder="0"></label>
+        <label>Date<input id="expenseDate" required type="date"></label>
+        <label>Category<select id="expenseCategory"></select></label>
+        <label>Payment method<select id="expensePayment"></select></label>
+        <label>Paid by<select id="expensePaidBy"><option value="Me">Me</option><option value="Partner">Partner</option></select></label>
+        <label>Expense type<select id="expenseType"><option value="Shared">Shared</option><option value="Personal">Personal</option></select></label>
+        <div id="personalFields" class="span-2 hidden">
+          <label>Personal expense belongs to<select id="expenseOwner"><option value="Me">Me</option><option value="Partner">Partner</option></select></label>
+        </div>
+        <div id="sharedFields" class="span-2 split-panel">
+          <div class="split-head"><b>Shared split</b><select id="splitType"><option value="50/50">50 / 50</option><option value="Percentage">Custom percentage</option><option value="Amount">Custom amount</option></select></div>
+          <div id="percentageControl" class="hidden"><label>My percentage<input id="myPercent" type="number" min="0" max="100" step="0.01" value="50"></label></div>
+          <div id="amountControl" class="hidden"><label>My share amount (₹)<input id="myAmount" type="number" min="0" step="0.01" value="0"></label></div>
+          <div class="split-preview"><div><span id="myShareLabel">Your share</span><b id="mySharePreview">₹0</b></div><div><span id="partnerShareLabel">Partner share</span><b id="partnerSharePreview">₹0</b></div></div>
+        </div>
+        <label>Merchant (optional)<input id="expenseMerchant" placeholder="Store or merchant"></label>
+        <label>Notes (optional)<input id="expenseNotes" placeholder="Short note"></label>
+        <div class="span-2 modal-actions"><button type="button" class="btn ghost" data-close-expense>Cancel</button><button id="expenseSave" class="btn primary" type="submit">Save expense</button></div>
+      </form>
+      <p id="expenseMessage" class="form-message"></p>
+    </div>
+  </div>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
